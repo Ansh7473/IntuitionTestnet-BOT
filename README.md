@@ -26,8 +26,8 @@ An advanced automation bot for **Intuition Testnet** operations including faucet
 
 1. **Clone the repository**
    ```bash
-   git clone https://github.com/ansh98998766/intuition.git
-   cd intuition
+   git clone https://github.com/Ansh7473/IntuitionTestnet-BOT.git
+   cd IntuitionTestnet-BOT
    ```
 
 2. **Install dependencies**
