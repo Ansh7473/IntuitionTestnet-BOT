@@ -1,0 +1,16 @@
+# Example Private Keys File
+# Replace these with your actual testnet private keys
+# One private key per line (with or without 0x prefix)
+
+# Example format:
+# 0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef
+# 9876543210fedcba9876543210fedcba9876543210fedcba9876543210fedcba
+
+# IMPORTANT SECURITY NOTES:
+# 1. Only use TESTNET private keys - NEVER mainnet keys
+# 2. These wallets should only contain testnet tokens
+# 3. Never share or commit this file to version control
+# 4. Keep this file secure and private
+
+# Add your testnet private keys below:
+# (Remove these example lines and add your real keys)

@@ -1,0 +1,40 @@
+{
+  "name": "intuition-testnet-bot",
+  "version": "1.0.0",
+  "description": "Advanced automation bot for Intuition Testnet faucet and bridge operations",
+  "main": "intuition.js",
+  "scripts": {
+    "start": "node intuition.js",
+    "faucet": "node intuition.js",
+    "bridge": "node intuition.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "intuition",
+    "testnet",
+    "faucet",
+    "bridge",
+    "ethereum",
+    "web3",
+    "automation",
+    "bot",
+    "blockchain"
+  ],
+  "author": "Ansh",
+  "license": "MIT",
+  "dependencies": {
+    "ethers": "^6.15.0",
+    "puppeteer": "^24.16.2"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ansh98998766/intuition.git"
+  },
+  "bugs": {
+    "url": "https://github.com/ansh98998766/intuition/issues"
+  },
+  "homepage": "https://github.com/ansh98998766/intuition#readme"
+}
