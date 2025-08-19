@@ -37,14 +37,11 @@ An advanced automation bot for **Intuition Testnet** operations including faucet
 
 3. **Setup virtual display** (for Linux/headless environments)
    ```bash
-   # Install Xvfb if not already installed
-   sudo apt-get update
-   sudo apt-get install xvfb
-
-   # Start virtual display
-   Xvfb :99 -screen 0 1920x1080x24 &
-   export DISPLAY=:99
+  
+   node Intuition.js
+ 
    ```
+
 
 4. **Create private keys file**
    ```bash
