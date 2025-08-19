@@ -390,7 +390,7 @@ class IntuitionFaucetBot {
     async displayMenu() {
         console.log('\n🎯 OPERATION MENU');
         console.log('─'.repeat(25));
-        console.log('1. 💰 Run Faucet Bot');
+        console.log('1. 💰 Run Faucet Bot fixing');
         console.log('2. 🌉 Run Bridge Bot');
         console.log('3. 🚪 Exit');
         console.log('─'.repeat(25));
