@@ -14,7 +14,7 @@ An advanced automation bot for **Intuition Testnet** operations including faucet
 - **🎯 Smart Transaction Management**: Round-robin wallet usage and customizable delays
 - **📊 Real-time Monitoring**: Live transaction tracking with detailed logs
 - **⚡ Enhanced Browser Automation**: System Chrome with anti-detection features
-- **⚡ FAUCET Ones Per IP Soon Adding Proxy Support For More Faucet Claims 
+- ⚡ FAUCET Ones Per IP Soon Adding Proxy Support For More Faucet Claims 
 ## 📋 Prerequisites
 
 - **Node.js** 18+ installed
