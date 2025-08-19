@@ -61,6 +61,7 @@ class IntuitionFaucetBot {
         this.browser = null;
         this.page = null;
         this.walletData = [];
+        this.FAUCET_URL = 'https://testnet.hub.intuition.systems/';
     }
 
     log(message) {
@@ -125,165 +126,316 @@ class IntuitionFaucetBot {
         }
     }
 
-    async setupBrowser() {
-        try {
-            this.log('🚀 Launching browser...');
-            
-            this.browser = await puppeteer.launch({
-                headless: "new",
-                devtools: false,
-                defaultViewport: null,
-                executablePath: '/usr/bin/google-chrome',
-                env: {
-                    ...process.env,
-                    DISPLAY: ':99'
-                },
-                args: [
-                    '--no-sandbox',
-                    '--disable-dev-shm-usage',
-                    '--disable-web-security',
-                    '--disable-features=VizDisplayCompositor',
-                    '--no-first-run',
-                    '--disable-default-apps',
-                    '--disable-sync',
-                    '--disable-translate',
-                    '--disable-extensions',
-                    '--disable-background-networking',
-                    '--disable-blink-features=AutomationControlled',
-                    '--user-agent=Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36'
-                ],
-                ignoreDefaultArgs: ['--enable-automation'],
-                ignoreHTTPSErrors: true
-            });
-
-            const pages = await this.browser.pages();
-            this.page = pages.length > 0 ? pages[0] : await this.browser.newPage();
-            
-            await this.page.setViewport({
-                width: 1920,
-                height: 1080,
-                deviceScaleFactor: 1,
-                isMobile: false,
-                hasTouch: false,
-                isLandscape: true
-            });
-            
-            // Enhanced anti-detection
-            await this.page.evaluateOnNewDocument(() => {
-                Object.defineProperty(navigator, 'webdriver', {
-                    get: () => undefined,
-                });
-                delete navigator.__proto__.webdriver;
-                
-                if (!window.chrome) {
-                    window.chrome = {
-                        runtime: {},
-                        loadTimes: function() {},
-                        csi: function() {},
-                    };
-                }
-                
-                Object.defineProperty(navigator, 'hardwareConcurrency', {
-                    get: () => 8
-                });
-                
-                Object.defineProperty(navigator, 'languages', {
-                    get: () => ['en-US', 'en'],
-                });
-            });
-
-            this.log('✅ Browser setup complete');
-            return true;
-        } catch (error) {
-            this.log(`❌ Browser setup failed: ${error.message}`);
-            return false;
-        }
-    }
-
-    async loadSiteAndWaitForChallenge() {
-        try {
-            this.log('🌐 Navigating to Intuition faucet...');
-            
-            // Monitor for Vercel challenge completion
-            let challengeJsLoaded = false;
-            let challengeWasmLoaded = false;
-            let challengeRequestCompleted = false;
-            let vcrcsSet = false;
-            
-            this.page.on('response', async (response) => {
-                const url = response.url();
-                
-                if (url.includes('challenge.v2.min.js')) {
-                    challengeJsLoaded = true;
-                    this.log('📄 Vercel challenge JS loaded');
-                }
-                
-                if (url.includes('challenge.v2.wasm')) {
-                    challengeWasmLoaded = true;
-                    this.log('🔧 Vercel challenge WASM loaded');
-                }
-                
-                if (url.includes('/request-challenge')) {
-                    challengeRequestCompleted = true;
-                    this.log('🔐 Vercel challenge request completed');
-                    
-                    const cookies = await this.page.cookies();
-                    const vcrcs = cookies.find(cookie => cookie.name === '_vcrcs');
-                    if (vcrcs) {
-                        vcrcsSet = true;
-                        this.log(`✅ _vcrcs cookie detected: ${vcrcs.value.substring(0, 50)}...`);
-                    }
-                }
-            });
-            
+   
+       async setupBrowser() {
+           try {
+               this.log('🚀 Launching browser...');
+               
+               // Auto-detect Chrome executable path based on OS
+               const getChromePath = () => {
+                   const os = require('os');
+                   const fs = require('fs');
+                   const path = require('path');
+                   
+                   const possiblePaths = {
+                       win32: [
+                           'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe',
+                           'C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe',
+                           path.join(os.homedir(), 'AppData\\Local\\Google\\Chrome\\Application\\chrome.exe'),
+                           path.join(os.homedir(), 'AppData\\Local\\Google\\Chrome SxS\\Application\\chrome.exe')
+                       ],
+                       darwin: [
+                           '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
+                           '/Applications/Google Chrome Canary.app/Contents/MacOS/Google Chrome Canary',
+                           '/usr/bin/google-chrome',
+                           '/usr/bin/chromium'
+                       ],
+                       linux: [
+                           '/usr/bin/google-chrome',
+                           '/usr/bin/google-chrome-stable',
+                           '/usr/bin/chromium',
+                           '/usr/bin/chromium-browser',
+                           '/snap/bin/chromium',
+                           '/usr/bin/google-chrome-unstable',
+                           '/usr/bin/google-chrome-beta',
+                           '/opt/google/chrome/chrome'
+                       ]
+                   };
+                   
+                   const platform = os.platform();
+                   const paths = possiblePaths[platform] || possiblePaths.linux;
+                   
+                   // Try to find existing Chrome installation
+                   for (const chromePath of paths) {
+                       try {
+                           if (fs.existsSync(chromePath)) {
+                               this.log(`✅ Found Chrome at: ${chromePath}`);
+                               return chromePath;
+                           }
+                       } catch (error) {
+                           // Continue to next path
+                       }
+                   }
+                   
+                   // Default fallback for Linux containers
+                   return '/usr/bin/google-chrome';
+               };
+               
+               this.browser = await puppeteer.launch({
+                   headless: "new",
+                   devtools: false,
+                   defaultViewport: null,
+                   executablePath: getChromePath(),
+                   env: {
+                       ...process.env,
+                       DISPLAY: ':99'
+                   },
+                   args: [
+                       '--no-sandbox',
+                       '--disable-dev-shm-usage',
+                       '--disable-web-security',
+                       '--disable-features=VizDisplayCompositor',
+                       '--no-first-run',
+                       '--disable-default-apps',
+                       '--disable-sync',
+                       '--disable-translate',
+                       '--disable-extensions',
+                       '--disable-background-networking',
+                       '--disable-blink-features=AutomationControlled',
+                       '--user-agent=Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36'
+                   ],
+                   ignoreDefaultArgs: ['--enable-automation'],
+                   ignoreHTTPSErrors: true
+               });
+   
+               const pages = await this.browser.pages();
+               this.page = pages.length > 0 ? pages[0] : await this.browser.newPage();
+               
+               await this.page.setViewport({
+                   width: 1920,
+                   height: 1080,
+                   deviceScaleFactor: 1,
+                   isMobile: false,
+                   hasTouch: false,
+                   isLandscape: true
+               });
+               
+               // Enhanced anti-detection
+               await this.page.evaluateOnNewDocument(() => {
+                   Object.defineProperty(navigator, 'webdriver', {
+                       get: () => undefined,
+                   });
+                   delete navigator.__proto__.webdriver;
+                   
+                   if (!window.chrome) {
+                       window.chrome = {
+                           runtime: {},
+                           loadTimes: function() {},
+                           csi: function() {},
+                       };
+                   }
+                   
+                   Object.defineProperty(navigator, 'hardwareConcurrency', {
+                       get: () => 8
+                   });
+                   
+                   Object.defineProperty(navigator, 'languages', {
+                       get: () => ['en-US', 'en'],
+                   });
+               });
+   
+               this.log('✅ Browser setup complete');
+               return true;
+           } catch (error) {
+               this.log(`❌ Browser setup failed: ${error.message}`);
+               return false;
+           }
+       }
+   
+       async loadSiteAndWaitForChallenge() {
+           try {
+               this.log('🌐 Navigating to Intuition faucet...');
+               
+               // Monitor for Vercel challenge completion
+               let challengeJsLoaded = false;
+               let challengeWasmLoaded = false;
+               let challengeRequestCompleted = false;
+               let vcrcsSet = false;
+               
+               this.page.on('response', async (response) => {
+                   const url = response.url();
+                   
+                   if (url.includes('challenge.v2.min.js')) {
+                       challengeJsLoaded = true;
+                       this.log('📄 Vercel challenge JS loaded');
+                   }
+                   
+                   if (url.includes('challenge.v2.wasm')) {
+                       challengeWasmLoaded = true;
+                       this.log('🔧 Vercel challenge WASM loaded');
+                   }
+                   
+                   if (url.includes('/request-challenge')) {
+                       challengeRequestCompleted = true;
+                       this.log('🔐 Vercel challenge request completed');
+                       
+                       const cookies = await this.page.cookies();
+                       const vcrcs = cookies.find(cookie => cookie.name === '_vcrcs');
+                       if (vcrcs) {
+                           vcrcsSet = true;
+                           this.log(`✅ _vcrcs cookie detected: ${vcrcs.value.substring(0, 50)}...`);
+                       }
+                   }
+               });
+               
             // Navigate to the site
-            await this.page.goto('https://testnet.hub.intuition.systems/', { 
+            await this.page.goto(this.FAUCET_URL, { 
                 waitUntil: 'networkidle2',
                 timeout: 60000 
-            });
-            
-            // Wait for challenge completion
-            const maxWait = 45000; // 45 seconds max
-            const startTime = Date.now();
-            
-            this.log('🔍 Waiting for Vercel challenge completion...');
-            
-            while (Date.now() - startTime < maxWait) {
-                const cookies = await this.page.cookies();
-                const vcrcs = cookies.find(cookie => cookie.name === '_vcrcs');
-                if (vcrcs && !vcrcsSet) {
-                    vcrcsSet = true;
-                    challengeRequestCompleted = true;
-                    this.log(`✅ _vcrcs cookie detected: ${vcrcs.value.substring(0, 50)}...`);
-                    break;
-                }
-                
-                if (challengeJsLoaded && challengeWasmLoaded && challengeRequestCompleted && vcrcsSet) {
-                    this.log('✅ Complete Vercel challenge sequence detected!');
-                    break;
-                }
-                
-                await this.delay(2000);
-            }
-            
-            await this.delay(3000);
-            
-            const finalCookies = await this.page.cookies();
-            const finalVcrcs = finalCookies.find(cookie => cookie.name === '_vcrcs');
-            
-            if (finalVcrcs) {
-                this.log('✅ Vercel challenge completed successfully!');
-                return true;
-            } else {
-                this.log('⚠️ No _vcrcs cookie found, but proceeding...');
-                return true;
-            }
-            
-        } catch (error) {
-            this.log(`❌ Error loading site: ${error.message}`);
-            return false;
-        }
-    }
+            });               // Wait for challenge completion
+               const maxWait = 45000; // 45 seconds max
+               const startTime = Date.now();
+               
+               this.log('🔍 Waiting for Vercel challenge completion...');
+               
+               while (Date.now() - startTime < maxWait) {
+                   const cookies = await this.page.cookies();
+                   const vcrcs = cookies.find(cookie => cookie.name === '_vcrcs');
+                   if (vcrcs && !vcrcsSet) {
+                       vcrcsSet = true;
+                       challengeRequestCompleted = true;
+                       this.log(`✅ _vcrcs cookie detected: ${vcrcs.value.substring(0, 50)}...`);
+                       break;
+                   }
+                   
+                   if (challengeJsLoaded && challengeWasmLoaded && challengeRequestCompleted && vcrcsSet) {
+                       this.log('✅ Complete Vercel challenge sequence detected!');
+                       break;
+                   }
+                   
+                   await this.delay(2000);
+               }
+               
+               await this.delay(3000);
+               
+               const finalCookies = await this.page.cookies();
+               const finalVcrcs = finalCookies.find(cookie => cookie.name === '_vcrcs');
+               
+               if (finalVcrcs) {
+                   this.log('✅ Vercel challenge completed successfully!');
+                   return true;
+               } else {
+                   this.log('⚠️ No _vcrcs cookie found, but proceeding...');
+                   return true;
+               }
+               
+           } catch (error) {
+               this.log(`❌ Error loading site: ${error.message}`);
+               return false;
+           }
+       }
+   
+       async runFaucet() {
+           try {
+               this.log('🎯 Starting Faucet Operations...');
+               
+               const setupSuccess = await this.setupBrowser();
+               if (!setupSuccess) {
+                   this.log('❌ Failed to setup browser');
+                   return;
+               }
+   
+               // Load site and wait for Vercel challenge
+               await this.loadSiteAndWaitForChallenge();
+   
+               let successCount = 0;
+               let processedCount = 0;
+               const totalWallets = this.walletData.length;
+   
+               for (const walletInfo of this.walletData) {
+                   processedCount++;
+                   
+                   console.log('\n' + '='.repeat(60));
+                   this.log(`💰 Processing wallet ${processedCount}/${totalWallets}: ${walletInfo.address}`);
+                   
+                   // Use browser's fetch with cookies (proven working approach)
+                   const result = await this.page.evaluate(async (walletAddress) => {
+                       try {
+                           const apiUrl = 'https://testnet.hub.intuition.systems/api/trpc/faucet.requestFaucetFunds?batch=1';
+                           const payload = {
+                               "0": {
+                                   "json": {
+                                       "rollupSubdomain": "intuition-testnet",
+                                       "recipientAddress": walletAddress,
+                                       "turnstileToken": "",
+                                       "tokenRollupAddress": null
+                                   },
+                                   "meta": {
+                                       "values": {
+                                           "tokenRollupAddress": ["undefined"]
+                                       }
+                                   }
+                               }
+                           };
+                           
+                           const response = await fetch(apiUrl, {
+                               method: 'POST',
+                               headers: {
+                                   'Content-Type': 'application/json',
+                               },
+                               body: JSON.stringify(payload)
+                           });
+                           
+                           return {
+                               status: response.status,
+                               statusText: response.statusText,
+                               data: await response.text()
+                           };
+                       } catch (error) {
+                           return { error: error.message };
+                       }
+                   }, walletInfo.address);
+                   
+                   this.log(`📡 API Response: Status ${result.status}`);
+                   
+                   if (result.error) {
+                       this.log(`❌ Request error: ${result.error}`);
+                   } else if (result.status === 200) {
+                       this.log(`✅ Faucet request successful!`);
+                       try {
+                           const responseData = JSON.parse(result.data);
+                           this.log(`📄 Response: ${JSON.stringify(responseData, null, 2)}`);
+                       } catch (parseError) {
+                           this.log(`📄 Response: ${result.data.substring(0, 200)}...`);
+                       }
+                       successCount++;
+                   } else if (result.status === 429) {
+                       this.log(`⏰ Rate limited: You can only request funds once every 24 hours`);
+                   } else if (result.status === 403) {
+                       this.log('⚠️ Blocked or need to refresh session, refreshing...');
+                       
+                       // Refresh session by reloading the page
+                       await this.page.reload({ waitUntil: 'networkidle2' });
+                       await this.delay(5000);
+                   } else {
+                       this.log(`❌ Request failed: ${result.status} ${result.statusText}`);
+                       this.log(`📄 Error details: ${result.data?.substring(0, 200)}...`);
+                   }
+   
+                   await this.delay(2000);
+               }
+   
+               this.log('🎉 Faucet operations completed!');
+               this.log(`📊 Results: ${successCount}/${totalWallets} successful requests`);
+               
+           } catch (error) {
+               this.log(`❌ Faucet error: ${error.message}`);
+           } finally {
+               if (this.browser) {
+                   await this.browser.close();
+               }
+           }
+       }
 
     async runFaucet() {
         try {
@@ -390,7 +542,7 @@ class IntuitionFaucetBot {
     async displayMenu() {
         console.log('\n🎯 OPERATION MENU');
         console.log('─'.repeat(25));
-        console.log('1. 💰 Run Faucet Bot fixing');
+        console.log('1. 💰 Run Faucet Bot');
         console.log('2. 🌉 Run Bridge Bot');
         console.log('3. 🚪 Exit');
         console.log('─'.repeat(25));
