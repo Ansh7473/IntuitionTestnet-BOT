@@ -13,4 +13,4 @@
 # 4. Keep this file secure and private
 
 # Add your testnet private keys below:
-# (Remove these example lines and add your real keys)
+# (Remove these example lines and add your real keys one per line )
