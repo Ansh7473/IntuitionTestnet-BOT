@@ -8,7 +8,7 @@ An advanced automation bot for **Intuition Testnet** operations including faucet
 
 ## 🚀 Features
 
-- **💰 Faucet Bot**: Automated testnet token claiming with Vercel challenge bypass (onlt pc  windows ) ones per ip soon adding proxy support for more faucet claims 
+- **💰 Faucet Bot**: Automated testnet token claiming with Vercel challenge bypass (only pc  windows ) 
 - **🌉 Bridge Bot**: Bidirectional bridge operations (Intuition ↔ Base Sepolia)
 - **🔐 Multi-Wallet Support**: Process multiple wallets from private keys file
 - **🎯 Smart Transaction Management**: Round-robin wallet usage and customizable delays
