@@ -3,7 +3,7 @@ const fs = require('fs');
 const ethers = require('ethers');
 const readline = require('readline');
 
-// Bridge Configuration from Python script
+// Bridge Configuration 
 const BRIDGE_CONFIG = {
     INTUITION_RPC_URL: "https://testnet.rpc.intuition.systems/http",
     INTUITION_EXPLORER: "https://testnet.explorer.intuition.systems/tx/",
@@ -15,7 +15,7 @@ const BRIDGE_CONFIG = {
     OUTBOX_ADDRESS: "0xBEC1462f12f8a968e07ae3D60C8C32Cd32A23826"
 };
 
-// Contract ABIs from Python script
+// Contract ABIs
 const ERC20_ABI = [
     {"type":"function","name":"balanceOf","stateMutability":"view","inputs":[{"name":"address","type":"address"}],"outputs":[{"name":"","type":"uint256"}]},
     {"type":"function","name":"allowance","stateMutability":"view","inputs":[{"name":"owner","type":"address"},{"name":"spender","type":"address"}],"outputs":[{"name":"","type":"uint256"}]},
